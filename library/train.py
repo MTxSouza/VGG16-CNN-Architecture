@@ -7,7 +7,7 @@ from vgg16 import *
 parser = argparse.ArgumentParser()
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--batch", type=int, default=32)
-parser.add_argument("--name", type=str, default="vgg16.h5", help="Name of pre-trained model.")
+parser.add_argument("--name", type=str, default="vgg16", help="Name of pre-trained model.")
 arg = parser.parse_args()
 
 
@@ -40,7 +40,8 @@ if __name__ == "__main__":
     assert arg.batch > 0, "--batch must be bigger than 0."
 
     model_name = arg.name
-    assert not re.fullmatch(r"[A-Za-z_]+(.h5)", model_name)[0] is None, "Invalid model name and --name must finish with .h5 format."
+    assert not re.fullmatch(r"[A-Za-z_0-9]+\.h5$", model_name) is None, "Invalid model name. It can not finish with .h5."
+    model_name += ".h5"
 
     # Setting up enviroment.
     gpus = tf.config.experimental.get_visible_devices(device_type="GPU")
