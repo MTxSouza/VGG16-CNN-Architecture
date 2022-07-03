@@ -16,19 +16,17 @@ def train_step(_model, _x, _y, _optimizer, _loss, _accuracy):
     with tf.GradientTape() as tape:
         pred = _model(_x, training=True)
         loss = _loss(_y, pred)
-        _loss.update_state(loss)
         _accuracy.update_state(_y, pred)
     grad = tape.gradient(loss, _model.trainable_variables)
     _optimizer.apply_gradients(zip(grad, _model.trainable_variables))
-    return _loss, _accuracy
+    return loss, _accuracy.result()
 
 @tf.function
 def val_step(_model, _x, _y, _loss, _accuracy):
-    pred = _model(_x)
+    pred = _model(_x, training=False)
     loss = _loss(_y, pred)
-    _loss.update_state(loss)
     _accuracy.update_state(_y, pred)
-    return _loss, _accuracy
+    return loss, _accuracy.result()
 
 
 if __name__ == "__main__":
@@ -48,25 +46,19 @@ if __name__ == "__main__":
     if gpus:
         for gpu in gpus:
             tf.config.experimental.set_virtual_device_configuration(gpu,
-            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=2048)])
+            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)])
 
     # Loading data.
     train, val, classes = load_data(arg.batch)
-    train_iterator = train.as_numpy_iterator()
-    val_iterator = val.as_numpy_iterator()
 
     # Setup metrics.
-    if classes > 1:
-        train_loss_func = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-        val_loss_func = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-        train_accuracy_func = tf.keras.metrics.SparseCategoricalCrossentropy()
-        val_accuracy_func = tf.keras.metrics.SparseCategoricalCrossentropy()
-    else:
-        train_loss_func = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-        val_loss_func = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-        train_accuracy_func = tf.keras.metrics.BinaryCrossentropy()
-        val_accuracy_func = tf.keras.metrics.BinaryCrossentropy()
-    optimizer = tf.keras.optimizers.Adam()
+    train_loss_func = tf.keras.losses.SparseCategoricalCrossentropy()
+    val_loss_func = tf.keras.losses.SparseCategoricalCrossentropy()
+    
+    train_accuracy_func = tf.keras.metrics.SparseCategoricalAccuracy()
+    val_accuracy_func = tf.keras.metrics.SparseCategoricalAccuracy()
+    
+    optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
 
     train_log = {
         "loss":[],
@@ -79,27 +71,32 @@ if __name__ == "__main__":
     # Loading model to be trained.
     model = VGG16(classes)
 
+    # Calculating progress bar.
+    train_bar = len(train) // 10
+    val_bar = len(val) // 10
+
     # Training.
     print("VGG16 model - Starting training..")
+    print("|Progress Bar: <==========> 10/10|Batch size: {}|Train Iterations: {}|Val Iterations: {}|".format(arg.batch, len(train),len(val)))
     print("-"*100)
     for e in range(arg.epochs):
         
         print("|Epoch: " + os.path.join(str(e+1),str(arg.epochs)) + "|")
-
-        curr_train_data = train_iterator.next()
-        curr_val_data = val_iterator.next()
-
-        for steps, (x_train, y_train) in enumerate(curr_train_data):
+        print("|Train progress:<",end="")
+        for steps, (x_train, y_train) in enumerate(train):
 
             train_loss, train_acc = train_step(model, x_train, y_train, optimizer, train_loss_func, train_accuracy_func)
-        train_loss = train_loss.result().numpy()
-        train_acc = train_accuracy_func.result().numpy()
+            if steps % train_bar == 0 and steps != 0:
+                print("=",end="")
+        print("> - TRAINED",end="|")
 
-        for (x_val, y_val) in curr_val_data:
+        print("Val progress:<",end="")
+        for steps, (x_val, y_val) in enumerate(val):
 
             val_loss, val_acc = val_step(model, x_val, y_val, val_loss_func, val_accuracy_func)
-        val_loss = val_loss_func.result().numpy()
-        val_acc = val_accuracy_func.result().numpy()
+            if steps % val_bar == 0 and steps != 0:
+                print("=",end="")
+        print("> - VALIDATED|")
 
         train_log["loss"].append(train_loss)
         train_log["accuracy"].append(train_acc)
@@ -107,12 +104,10 @@ if __name__ == "__main__":
         train_log["val_accuracy"].append(val_acc)
         train_log["epoch"] += 1
 
-        print("|Steps: {}|loss: {:.3f} accuracy: {:.3f}|val_loss: {:.3f} val_accuracy: {:.3f}|".format(steps,train_loss, train_acc, val_loss, val_acc))
+        print("|loss: {:.3f} accuracy: {:.3f}|val_loss: {:.3f} val_accuracy: {:.3f}|".format(train_loss, train_acc, val_loss, val_acc))
         print("-"*100)
 
-        train_loss_func.reset_states()
         train_accuracy_func.reset_states()
-        val_loss_func.reset_states()
         val_accuracy_func.reset_states()
 
     # Saving model.
