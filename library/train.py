@@ -89,22 +89,17 @@ if __name__ == "__main__":
         curr_train_data = train_iterator.next()
         curr_val_data = val_iterator.next()
 
-        for (x_train, y_train) in enumerate(curr_train_data):
+        for steps, (x_train, y_train) in enumerate(curr_train_data):
 
             train_loss, train_acc = train_step(model, x_train, y_train, optimizer, train_loss_func, train_accuracy_func)
         train_loss = train_loss.result().numpy()
         train_acc = train_accuracy_func.result().numpy()
 
-        for (x_val, y_val) in enumerate(curr_val_data):
+        for (x_val, y_val) in curr_val_data:
 
             val_loss, val_acc = val_step(model, x_val, y_val, val_loss_func, val_accuracy_func)
         val_loss = val_loss_func.result().numpy()
         val_acc = val_accuracy_func.result().numpy()
-
-        train_loss_func.reset_states()
-        train_accuracy_func.reset_states()
-        val_loss_func.reset_states()
-        val_accuracy_func.reset_states()
 
         train_log["loss"].append(train_loss)
         train_log["accuracy"].append(train_acc)
@@ -112,8 +107,13 @@ if __name__ == "__main__":
         train_log["val_accuracy"].append(val_acc)
         train_log["epoch"] += 1
 
-        print("|loss: {:.3f} accuracy: {:.3f}|val_loss: {:.3f} val_accuracy: {:.3f}|".format(train_loss, train_acc, val_loss, val_acc))
+        print("|Steps: {}|loss: {:.3f} accuracy: {:.3f}|val_loss: {:.3f} val_accuracy: {:.3f}|".format(steps,train_loss, train_acc, val_loss, val_acc))
         print("-"*100)
+
+        train_loss_func.reset_states()
+        train_accuracy_func.reset_states()
+        val_loss_func.reset_states()
+        val_accuracy_func.reset_states()
 
     # Saving model.
     models_path = os.path.dirname(os.path.realpath(__file__)).split("/")
