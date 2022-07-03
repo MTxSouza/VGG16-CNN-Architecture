@@ -43,10 +43,12 @@ if __name__ == "__main__":
     assert not re.fullmatch(r"[A-Za-z_0-9]+\.h5$", model_name) is None, "Invalid model name. It can not finish with .h5."
     model_name += ".h5"
 
-    # Setting up enviroment.
-    gpus = tf.config.experimental.get_visible_devices(device_type="GPU")
-    for gpu in gpus:
-        tf.config.experimental.set_memory_growth(device=gpu, enable=True)
+    # Setting up memory use.
+    gpus = tf.config.list_physical_devices(device_type="GPU")
+    if gpus:
+        for gpu in gpus:
+            tf.config.experimental.set_virtual_device_configuration(gpu,
+            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=2048)])
 
     # Loading data.
     train, val, classes = load_data(arg.batch)
