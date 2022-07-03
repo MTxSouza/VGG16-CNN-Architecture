@@ -83,6 +83,7 @@ if __name__ == "__main__":
     for e in range(arg.epochs):
         
         print("|Epoch: " + os.path.join(str(e+1),str(arg.epochs)) + "|")
+        start = time.time()
         
         print("|Training|")
         for steps, (x_train, y_train) in enumerate(train):
@@ -106,8 +107,10 @@ if __name__ == "__main__":
                 train_log["val_accuracy"].append(acc.numpy())
                 train_log["val_iterations"] += 1
 
+        print("Time taken: {:.2f}".format(time.time() - start))
         if e+1 < arg.epochs:
             print("-"*100)
+
 
         train_accuracy_func.reset_states()
         val_accuracy_func.reset_states()
