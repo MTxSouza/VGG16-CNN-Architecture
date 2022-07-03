@@ -63,9 +63,10 @@ if __name__ == "__main__":
     train_log = {
         "loss":[],
         "accuracy":[],
+        "iterations":0,
         "val_loss":[],
         "val_accuracy":[],
-        "epoch":0
+        "val_iterations":0
     }
 
     # Loading model to be trained.
@@ -77,38 +78,40 @@ if __name__ == "__main__":
 
     # Training.
     print("VGG16 model - Starting training..")
-    print("|Progress Bar: <==========> 10/10|Batch size: {}|Train Iterations: {}|Val Iterations: {}|".format(arg.batch, len(train),len(val)))
-    print("-"*100)
+    print("|Batch size: {}|Train Iterations: {}|Val Iterations: {}|".format(arg.batch, len(train),len(val)))
+    print("="*100)
     for e in range(arg.epochs):
         
         print("|Epoch: " + os.path.join(str(e+1),str(arg.epochs)) + "|")
-        print("|Train progress:<",end="")
+        
+        print("|Training|")
         for steps, (x_train, y_train) in enumerate(train):
 
-            train_loss, train_acc = train_step(model, x_train, y_train, optimizer, train_loss_func, train_accuracy_func)
+            loss, acc = train_step(model, x_train, y_train, optimizer, train_loss_func, train_accuracy_func)
             if steps % train_bar == 0 and steps != 0:
-                print("=",end="")
-        print("> - TRAINED",end="|")
 
-        print("Val progress:<",end="")
+                print("\t- {:.1f}% |loss: {:.3f} accuracy: {:.3f}|".format((steps / train_bar)*10, loss, acc))
+                train_log["loss"].append(loss.numpy())
+                train_log["accuracy"].append(acc.numpy())
+                train_log["iterations"] += 1
+
+        print("|Validating|")
         for steps, (x_val, y_val) in enumerate(val):
 
-            val_loss, val_acc = val_step(model, x_val, y_val, val_loss_func, val_accuracy_func)
+            loss, acc = val_step(model, x_val, y_val, val_loss_func, val_accuracy_func)
             if steps % val_bar == 0 and steps != 0:
-                print("=",end="")
-        print("> - VALIDATED|")
 
-        train_log["loss"].append(train_loss)
-        train_log["accuracy"].append(train_acc)
-        train_log["val_loss"].append(val_loss)
-        train_log["val_accuracy"].append(val_acc)
-        train_log["epoch"] += 1
+                print("\t- {:.1f}% |loss: {:.3f} accuracy: {:.3f}|".format((steps / val_bar)*10, loss, acc))
+                train_log["val_loss"].append(loss.numpy())
+                train_log["val_accuracy"].append(acc.numpy())
+                train_log["val_iterations"] += 1
 
-        print("|loss: {:.3f} accuracy: {:.3f}|val_loss: {:.3f} val_accuracy: {:.3f}|".format(train_loss, train_acc, val_loss, val_acc))
-        print("-"*100)
+        if e+1 < arg.epochs:
+            print("-"*100)
 
         train_accuracy_func.reset_states()
         val_accuracy_func.reset_states()
+    print("="*100)
 
     # Saving model.
     models_path = os.path.dirname(os.path.realpath(__file__)).split("/")
