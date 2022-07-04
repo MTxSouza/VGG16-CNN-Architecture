@@ -46,7 +46,7 @@ if __name__ == "__main__":
     if gpus:
         for gpu in gpus:
             tf.config.experimental.set_virtual_device_configuration(gpu,
-            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1680)])
+            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)])
 
     # Loading data.
     train, val, classes = load_data(arg.batch)
