@@ -63,10 +63,8 @@ if __name__ == "__main__":
     train_log = {
         "loss":[],
         "accuracy":[],
-        "iterations":0,
         "val_loss":[],
-        "val_accuracy":[],
-        "val_iterations":0
+        "val_accuracy":[]
     }
 
     # Loading model to be trained.
@@ -91,7 +89,6 @@ if __name__ == "__main__":
             loss = train_step(model, x_train, y_train, optimizer, train_loss_func, train_accuracy_func)
 
             train_log["loss"].append(loss.numpy())
-            train_log["iterations"] += 1
 
             if steps % train_bar == 0 and steps != 0:
                 print("[Iterations: {}] - loss: {:.3f}".format(steps,loss))
@@ -106,7 +103,6 @@ if __name__ == "__main__":
             loss = val_step(model, x_val, y_val, val_loss_func, val_accuracy_func)
             
             train_log["val_loss"].append(loss.numpy())
-            train_log["val_iterations"] += 1
 
             if steps % val_bar == 0 and steps != 0:
                 print("[Iterations: {}] - loss: {:.3f}".format(steps,loss))
