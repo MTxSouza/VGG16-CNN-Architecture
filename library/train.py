@@ -97,7 +97,7 @@ if __name__ == "__main__":
             if steps % train_bar == 0 and steps != 0:
                 print("=",end="")
 
-        print(" || validating progress:<",end="")
+        print("> || validating progress:<",end="")
         for steps, (x_val, y_val) in enumerate(val):
 
             loss, acc = val_step(model, x_val, y_val, val_loss_func, val_accuracy_func)
