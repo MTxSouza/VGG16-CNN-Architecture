@@ -114,7 +114,6 @@ if __name__ == "__main__":
             train_log["loss"][-1],train_log["accuracy"][-1],train_log["val_loss"][-1],train_log["val_accuracy"][-1],time.time() - start))
         print("-"*93)
 
-
         train_accuracy_func.reset_states()
         val_accuracy_func.reset_states()
 
