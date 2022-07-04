@@ -16,17 +16,17 @@ def train_step(_model, _x, _y, _optimizer, _loss, _accuracy):
     with tf.GradientTape() as tape:
         pred = _model(_x, training=True)
         loss = _loss(_y, pred)
-        _accuracy.update_state(_y, pred)
     grad = tape.gradient(loss, _model.trainable_variables)
     _optimizer.apply_gradients(zip(grad, _model.trainable_variables))
-    return loss, _accuracy.result()
+    _accuracy.update_state(_y, pred)
+    return loss
 
 @tf.function
 def val_step(_model, _x, _y, _loss, _accuracy):
     pred = _model(_x, training=False)
     loss = _loss(_y, pred)
     _accuracy.update_state(_y, pred)
-    return loss, _accuracy.result()
+    return loss
 
 
 if __name__ == "__main__":
@@ -83,39 +83,40 @@ if __name__ == "__main__":
     for e in range(arg.epochs):
         
         print("- Epoch: {}/{} | ".format(e+1, arg.epochs),end="")
-        print("training progress:<",end="")
         start = time.time()
         
+        print("(training..)")
         for steps, (x_train, y_train) in enumerate(train):
 
-            loss, acc = train_step(model, x_train, y_train, optimizer, train_loss_func, train_accuracy_func)
+            loss = train_step(model, x_train, y_train, optimizer, train_loss_func, train_accuracy_func)
 
             train_log["loss"].append(loss.numpy())
-            train_log["accuracy"].append(acc.numpy())
             train_log["iterations"] += 1
 
             if steps % train_bar == 0 and steps != 0:
-                print("=",end="")
+                print("[Iterations: {}] - loss: {:.3f}".format(steps,loss))
+        
+        acc = train_accuracy_func.result()
+        train_log["accuracy"].append(acc.numpy())
+        train_accuracy_func.reset_states()
 
-        print("> || validating progress:<",end="")
+        print("(validating..)")
         for steps, (x_val, y_val) in enumerate(val):
 
-            loss, acc = val_step(model, x_val, y_val, val_loss_func, val_accuracy_func)
+            loss = val_step(model, x_val, y_val, val_loss_func, val_accuracy_func)
             
             train_log["val_loss"].append(loss.numpy())
-            train_log["val_accuracy"].append(acc.numpy())
             train_log["val_iterations"] += 1
 
             if steps % val_bar == 0 and steps != 0:
-                print("=",end="")
-        print("> |")
+                print("[Iterations: {}] - loss: {:.3f}".format(steps,loss))
 
-        print("loss: {:.3f} accuracy: {:.3f} - val_loss: {:.3f} val_accuracy: {:.3f} | time taken: {:.3f}s".format(
-            train_log["loss"][-1],train_log["accuracy"][-1],train_log["val_loss"][-1],train_log["val_accuracy"][-1],time.time() - start))
+        acc = train_accuracy_func.result()
+        train_log["val_accuracy"].append(acc.numpy())
+        val_accuracy_func.reset_states()
+
         print("-"*93)
 
-        train_accuracy_func.reset_states()
-        val_accuracy_func.reset_states()
 
     # Saving model.
     models_path = os.path.dirname(os.path.realpath(__file__)).split("/")
