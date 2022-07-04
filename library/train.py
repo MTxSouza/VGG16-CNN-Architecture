@@ -38,7 +38,7 @@ if __name__ == "__main__":
     assert arg.batch > 0, "--batch must be bigger than 0."
 
     model_name = arg.name
-    assert not re.fullmatch(r"[A-Za-z_0-9]+\.h5$", model_name) is None, "Invalid model name. It can not finish with .h5."
+    assert re.fullmatch(r"[A-Za-z_0-9]+\.h5$", model_name) is None, "Invalid model name. It can not finish with .h5."
     model_name += ".h5"
 
     # Setting up memory use.
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     if gpus:
         for gpu in gpus:
             tf.config.experimental.set_virtual_device_configuration(gpu,
-            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)])
+            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1680)])
 
     # Loading data.
     train, val, classes = load_data(arg.batch)
