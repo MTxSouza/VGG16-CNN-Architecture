@@ -117,7 +117,6 @@ if __name__ == "__main__":
 
         print("-"*93)
 
-
     # Saving model.
     models_path = os.path.dirname(os.path.realpath(__file__)).split("/")
     models_path.pop(-1)
