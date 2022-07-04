@@ -79,42 +79,44 @@ if __name__ == "__main__":
     # Training.
     print("VGG16 model - Starting training..")
     print("|Batch size: {}|Train Iterations: {}|Val Iterations: {}|".format(arg.batch, len(train),len(val)))
-    print("="*100)
+    print("-"*93)
     for e in range(arg.epochs):
         
-        print("|Epoch: " + os.path.join(str(e+1),str(arg.epochs)) + "|")
+        print("- Epoch: {}/{} | ".format(e+1, arg.epochs),end="")
+        print("training progress:<",end="")
         start = time.time()
         
-        print("|Training|")
         for steps, (x_train, y_train) in enumerate(train):
 
             loss, acc = train_step(model, x_train, y_train, optimizer, train_loss_func, train_accuracy_func)
+
+            train_log["loss"].append(loss.numpy())
+            train_log["accuracy"].append(acc.numpy())
+            train_log["iterations"] += 1
+
             if steps % train_bar == 0 and steps != 0:
+                print("=",end="")
 
-                print("\t- {:.1f}% |loss: {:.3f} accuracy: {:.3f}|".format((steps / train_bar)*10, loss, acc))
-                train_log["loss"].append(loss.numpy())
-                train_log["accuracy"].append(acc.numpy())
-                train_log["iterations"] += 1
-
-        print("|Validating|")
+        print(" || validating progress:<",end="")
         for steps, (x_val, y_val) in enumerate(val):
 
             loss, acc = val_step(model, x_val, y_val, val_loss_func, val_accuracy_func)
+            
+            train_log["val_loss"].append(loss.numpy())
+            train_log["val_accuracy"].append(acc.numpy())
+            train_log["val_iterations"] += 1
+
             if steps % val_bar == 0 and steps != 0:
+                print("=",end="")
+        print("> |")
 
-                print("\t- {:.1f}% |loss: {:.3f} accuracy: {:.3f}|".format((steps / val_bar)*10, loss, acc))
-                train_log["val_loss"].append(loss.numpy())
-                train_log["val_accuracy"].append(acc.numpy())
-                train_log["val_iterations"] += 1
-
-        print("Time taken: {:.2f}".format(time.time() - start))
-        if e+1 < arg.epochs:
-            print("-"*100)
+        print("loss: {:.3f} accuracy: {:.3f} - val_loss: {:.3f} val_accuracy: {:.3f} | time taken: {:.3f}s".format(
+            train_log["loss"][-1],train_log["accuracy"][-1],train_log["val_loss"][-1],train_log["val_accuracy"][-1],time.time() - start))
+        print("-"*93)
 
 
         train_accuracy_func.reset_states()
         val_accuracy_func.reset_states()
-    print("="*100)
 
     # Saving model.
     models_path = os.path.dirname(os.path.realpath(__file__)).split("/")
